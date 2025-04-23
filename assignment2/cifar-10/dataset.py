@@ -66,10 +66,23 @@ class CIFAR10(torch.utils.data.Dataset):
         img = img.astype(np.float32)
         img = img.transpose(2, 0, 1)
         
-        # ------------TODO--------------
-        # data augmentation
-        # ------------TODO--------------
-
+        # 数据增强
+        # if self.train:
+        #     # 转换为PIL图像以便应用transforms
+        #     img = torch.FloatTensor(img)
+        #     img = img.permute(1, 2, 0).numpy()
+        #     img = Image.fromarray(img.astype('uint8'))
+            
+        #     # 应用数据增强
+        #     transform = tfs.Compose([
+        #         tfs.RandomHorizontalFlip(p=0.5),
+        #         tfs.RandomCrop(32, padding=4),
+        #         tfs.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2),
+        #         tfs.ToTensor()
+        #     ])
+        #     img = transform(img)
+        #     img = img.numpy()
+        
         return img, target
 
     def __len__(self):
@@ -97,15 +110,19 @@ if __name__ == '__main__':
     img = Image.open('Lenna.png')
     img.save('../results/Lenna.png')
 
-    # --------------TODO------------------
-    # Copy the first kind of your augmentation code here
-    # --------------TODO------------------
-    aug1 = img
-    aug1.save(f'../results/Lenna_aug1.png')
+    # 第一种增强：水平翻转+亮度对比度调整
+    transform1 = tfs.Compose([
+        tfs.RandomHorizontalFlip(p=1),
+        tfs.ColorJitter(brightness=0.5, contrast=0.5)
+    ])
+    aug1 = transform1(img)
+    aug1.save('../results/Lenna_aug1.png')
 
-    # --------------TODO------------------
-    # Copy the second kind of your augmentation code here
-    # --------------TODO------------------
-    aug2 = img
-    aug2.save(f'../results/Lenna_aug2.png')
+    # 第二种增强：随机裁剪+旋转
+    transform2 = tfs.Compose([
+        tfs.RandomCrop(size=(400, 400), pad_if_needed=True),
+        tfs.RandomRotation(degrees=30)
+    ])
+    aug2 = transform2(img)
+    aug2.save('../results/Lenna_aug2.png')
 

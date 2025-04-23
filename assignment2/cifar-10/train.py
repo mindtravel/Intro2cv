@@ -10,9 +10,9 @@ from torch.utils.tensorboard  import SummaryWriter
 
 
 def MyCELoss(pred, gt):
-    # ----------TODO------------
-    # Implement CE loss here
-    # ----------TODO------------
+    # 实现交叉熵损失
+    pred = torch.log_softmax(pred, dim=1)
+    loss = -torch.sum(pred[range(gt.shape[0]), gt]) / gt.shape[0]
     return loss 
 
 
@@ -32,9 +32,9 @@ def validate(epoch, model, val_loader, writer):
         top1.update(acc1.item(), bsz)
         top5.update(acc5.item(), bsz)
 
-    # ----------TODO------------
-    # draw accuracy curve!
-    # ----------TODO------------
+    # 添加验证集精度曲线
+    writer.add_scalar('Val/Acc@1', top1.avg, epoch)
+    writer.add_scalar('Val/Acc@5', top5.avg, epoch)
 
     print(' Val Acc@1 {top1.avg:.3f}'.format(top1=top1))
     print(' Val Acc@5 {top5.avg:.3f}'.format(top5=top5))
@@ -70,10 +70,10 @@ def train(epoch, model, optimizer, criterion, train_loader, writer):
 
         iteration += 1
         if iteration % 50 == 0:
-            pass 
-            # ----------TODO------------
-            # draw loss curve and accuracy curve!
-            # ----------TODO------------
+            # 添加训练过程中的损失和精度曲线
+            writer.add_scalar('Train/Loss', losses.avg, iteration)
+            writer.add_scalar('Train/Acc@1', top1.avg, iteration)
+            writer.add_scalar('Train/Acc@5', top5.avg, iteration)
 
     print(' Epoch: %d'%(epoch))
     print(' Train Acc@1 {top1.avg:.3f}'.format(top1=top1))

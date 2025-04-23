@@ -1,1 +1,1 @@
-python train.py -e test
+python train.py -e test_with_dataaug -b 16
