@@ -14,7 +14,7 @@ def bn_forward_test(x, gamma, beta, mean, var):
     #----------------TODO------------------
     # Implement forward 
     #----------------TODO------------------
-    x_hat = (x - mean) / (var + eps)
+    x_hat = (x - mean) / (np.sqrt(var) + eps)
     out = gamma * x_hat + beta
     return out
 
@@ -26,7 +26,7 @@ def bn_forward_train(x, gamma, beta):
     # print(x.shape)
     sample_mean = np.mean(x, axis=0)
     sample_var = np.var(x, axis=0)
-    x_hat = (x - sample_mean) / (sample_var + eps)
+    x_hat = (x - sample_mean) / (np.sqrt(sample_var) + eps)
     out = gamma * x_hat + beta
         
     # save intermidiate variables for computing the gradient when backward
@@ -39,14 +39,23 @@ def bn_backward(dout, cache):
     #----------------TODO------------------
     # Implement backward 
     #----------------TODO------------------
-    gamma = cache[0]
-    sample_var = cache[2]
-    x_hat = cache[4]
+    gamma, x, mu, var, x_hat = cache
+    batchsize = x.shape[0]
 
-    d_x_hat = dout * gamma
-    dx = d_x_hat * (eps + sample_var)
     dgamma = (dout * x_hat).sum()
     dbeta = dout.sum()
+    dx_hat = dout * gamma
+    # d_mean = d_x_hat
+    # d_var
+    # dx = d_x_hat * (eps + np.sqrt(sample_var))
+    dvar = np.sum(dx_hat * (x - mu) * -0.5 * (var + eps)**(-1.5), axis=0)
+    
+    # 计算关于均值的梯度
+    dmu = np.sum(dx_hat * -1/np.sqrt(var + eps), axis=0) + dvar * np.mean(-2 * (x - mu), axis=0)
+    
+    # 计算关于输入x的梯度
+    dx = dx_hat / np.sqrt(var + eps) + dvar * 2 * (x - mu) / batchsize + dmu / batchsize
+    
     
     return dx, dgamma, dbeta
 
@@ -95,13 +104,14 @@ if __name__ == "__main__":
     for i in range(50):
         # Forward
         output_layer_1 = train_data.dot(MLP_layer_1)
-        # output_layer_1_bn, cache = bn_forward_train(output_layer_1, gamma, beta)
+        output_layer_1_bn, cache = bn_forward_train(output_layer_1, gamma, beta)
         # update runtime mean and var from cache 
-        # mean = cache[2]
-        # var = cache[3]
+        mean = cache[2]
+        var = cache[3]
         
-        # output_layer_1_act = 1 / (1+np.exp(-output_layer_1_bn))  #sigmoid activation function
-        output_layer_1_act = sigmoid(output_layer_1)  #sigmoid activation function
+        output_layer_1_act = sigmoid(output_layer_1_bn)  #sigmoid activation function
+        # debug: activate this to test without batchnorm
+        # output_layer_1_act = sigmoid(output_layer_1)  #sigmoid activation function
         output_layer_2 = output_layer_1_act.dot(MLP_layer_2)
         pred_y = sigmoid(output_layer_2)  #sigmoid activation function
 
@@ -115,14 +125,17 @@ if __name__ == "__main__":
         grad_activation_func = grad_pred_y * pred_y * (1-pred_y) 
         grad_layer_2 = output_layer_1_act.T.dot(grad_activation_func)
         grad_output_layer_1_act = grad_activation_func.dot(MLP_layer_2.T)
-        grad_output_layer_1  = grad_output_layer_1_act * (1-output_layer_1_act) * output_layer_1_act
-        # grad_output_layer_1_bn  = grad_output_layer_1_act * (1-output_layer_1_act) * output_layer_1_act
-        # grad_output_layer_1, grad_gamma, grad_beta = bn_backward(grad_output_layer_1_bn, cache)
+        
+        
+        # debug: activate this to test without batchnorm
+        # grad_output_layer_1  = grad_output_layer_1_act * (1-output_layer_1_act) * output_layer_1_act
+        grad_output_layer_1_bn  = grad_output_layer_1_act * (1-output_layer_1_act) * output_layer_1_act
+        grad_output_layer_1, grad_gamma, grad_beta = bn_backward(grad_output_layer_1_bn, cache)
         grad_layer_1 = train_data.T.dot(grad_output_layer_1)
 
         # update parameters
-        # gamma -= lr * grad_gamma
-        # beta -= lr * grad_beta
+        gamma -= lr * grad_gamma
+        beta -= lr * grad_beta
         MLP_layer_1 -= lr * grad_layer_1
         MLP_layer_2 -= lr * grad_layer_2
     
