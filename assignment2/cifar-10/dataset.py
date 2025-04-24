@@ -66,22 +66,28 @@ class CIFAR10(torch.utils.data.Dataset):
         img = img.astype(np.float32)
         img = img.transpose(2, 0, 1)
         
-        # 数据增强
-        # if self.train:
-        #     # 转换为PIL图像以便应用transforms
-        #     img = torch.FloatTensor(img)
-        #     img = img.permute(1, 2, 0).numpy()
-        #     img = Image.fromarray(img.astype('uint8'))
+        # # 数据增强
+        if self.train:
+            # # 转换为PIL图像以便应用transforms
+            img = torch.FloatTensor(img)
+            img = img.permute(1, 2, 0).numpy()
+            # img = Image.fromarray(img)
             
-        #     # 应用数据增强
-        #     transform = tfs.Compose([
-        #         tfs.RandomHorizontalFlip(p=0.5),
-        #         tfs.RandomCrop(32, padding=4),
-        #         tfs.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2),
-        #         tfs.ToTensor()
-        #     ])
-        #     img = transform(img)
-        #     img = img.numpy()
+            # 应用数据增强
+            transform1 = tfs.Compose([
+                tfs.ToTensor(),
+                tfs.RandomCrop(32),
+                tfs.RandomRotation(degrees=15),
+            ])
+            transform2 = tfs.Compose([
+                tfs.ToTensor(),
+                tfs.ColorJitter(brightness=0.3 + np.random.rand() * 0.4, contrast=0.3 + np.random.rand() * 0.4)
+            ])
+            transform = [transform1, transform2]
+            random_idx = np.random.randint(0,1)
+            
+            img = transform[random_idx](img)
+            img = img.numpy()
         
         return img, target
 
@@ -120,7 +126,7 @@ if __name__ == '__main__':
 
     # 第二种增强：随机裁剪+旋转
     transform2 = tfs.Compose([
-        tfs.RandomCrop(size=(400, 400), pad_if_needed=True),
+        tfs.RandomCrop(size=(400, 400)),
         tfs.RandomRotation(degrees=30)
     ])
     aug2 = transform2(img)
