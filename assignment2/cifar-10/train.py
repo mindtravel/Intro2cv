@@ -139,9 +139,9 @@ def run(args):
 if __name__ == '__main__':
     arg_parser = argparse.ArgumentParser()
     arg_parser.add_argument('--exp_name', '-e', type=str, required=True, help="The checkpoints and logs will be save in ./checkpoint/$EXP_NAME")
-    arg_parser.add_argument('--lr', '-l', type=float, default=1e-4, help="Learning rate")
+    arg_parser.add_argument('--lr', '-l', type=float, default=1e-3, help="Learning rate")
     arg_parser.add_argument('--save_freq', '-s', type=int, default=1, help="frequency of saving model")
-    arg_parser.add_argument('--total_epoch', '-t', type=int, default=10, help="total epoch number for training")
+    arg_parser.add_argument('--total_epoch', '-t', type=int, default=20, help="total epoch number for training")
     arg_parser.add_argument('--cont', '-c', action='store_true', help="whether to load saved checkpoints from $EXP_NAME and continue training")
     arg_parser.add_argument('--batchsize', '-b', type=int, default=20, help="batch size")
     args = arg_parser.parse_args()

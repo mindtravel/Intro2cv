@@ -6,6 +6,8 @@ import torch
 import torchvision.transforms as tfs
 from PIL import Image
 
+np.random.seed(153)# 固定种子，结果可以复现
+
 class CIFAR10(torch.utils.data.Dataset):
     """
         modified from `CIFAR10 <https://www.cs.toronto.edu/~kriz/cifar.html>`_ Dataset.
