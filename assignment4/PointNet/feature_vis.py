@@ -13,6 +13,7 @@ import matplotlib.pyplot as plt
 
 if __name__ == '__main__':
     feat_dim = 1024
+    # feat_dim = 256
     batch_size = 16
     num_classes = 16
     opt = setting()
@@ -57,6 +58,8 @@ if __name__ == '__main__':
         color_heat_feat = cv2.applyColorMap((heat_feat*255).astype(np.uint8), cv2.COLORMAP_JET) #BGR
 
         for i in range(batch_size):
+            if i < 5:
+                continue
             fig = plt.figure()
             ax = fig.add_subplot(111, projection='3d')
 
@@ -67,6 +70,7 @@ if __name__ == '__main__':
             ax.set_ylim(-1, 1)
             ax.set_zlim(-1, 1)
 
+            
             plt.show()
         
         break

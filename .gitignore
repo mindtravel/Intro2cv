@@ -1,4 +1,7 @@
 assignment2/datasets/
 assignment2/experiments/
+assignment4/icv_hw4
+assignment4/PointNet/exps
 *.pyc
 *.zip
+*.sh

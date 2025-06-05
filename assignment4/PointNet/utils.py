@@ -2,8 +2,8 @@ import os
 from torch.utils.tensorboard  import SummaryWriter
 
 class setting:
-    dataset = "/Users/xxx/shapenetcore_partanno_segmentation_benchmark_v0"
-    batchSize = 32
+    dataset = "/media/2T/home/zxl/code/Intro2cv/assignment4/icv_hw4/shapenetcore_partanno_segmentation_benchmark_v0"
+    batchSize = 24
     num_points = 1024
     workers = 1
     nepoch = 2

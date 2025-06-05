@@ -14,6 +14,14 @@ from utils import log_writer, setting
 from os.path import join as pjoin
 import argparse
 
+def randomize_position(x):
+    print(x.shape)
+    x.transpose_(2, 1)  # (B, 3, N)
+    indices = torch.randperm(x.size(1))
+    x = x[:, indices]
+    x.transpose_(2, 1)  # (B, 3, N)
+    return x
+
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
@@ -54,6 +62,7 @@ if __name__ == '__main__':
     num_classes = len(dataset.classes)
     print('classes', num_classes)
 
+    # 两个版本的 PointNet 分类器
     if args.dim == 256:
         classifier = PointNetCls256D(k=num_classes)
     elif args.dim == 1024:
@@ -80,16 +89,17 @@ if __name__ == '__main__':
             optimizer.step()
             pred_choice = pred.data.max(1)[1]
             correct = pred_choice.eq(target.data).cpu().float().mean()
-            print('[%d: %d/%d] train loss: %f accuracy: %f' % (epoch, i, num_batch, loss.item(), correct.item()))
+            # print('[%d: %d/%d] train loss: %f accuracy: %f' % (epoch, i, num_batch, loss.item(), correct.item()))
             writer.add_train_scalar("Loss", loss.item(), count )
             writer.add_train_scalar("Acc", correct.item(), count)
 
             if i % 10 == 0:
                 j, data = next(enumerate(testdataloader, 0))
+                # points, target = randomize_position(data)
                 points, target = data
                 target = target[:, 0]
                 classifier = classifier.eval()
-                pred, _= classifier(points)
+                pred, _ = classifier(points)
                 loss = F.nll_loss(pred, target)
                 pred_choice = pred.data.max(1)[1]
                 correct = pred_choice.eq(target.data).cpu().float().mean()

@@ -10,6 +10,17 @@ from tqdm import tqdm
 import numpy as np
 from utils import log_writer, setting
 
+def randomize_position(x, y):
+    # # print(x[0].shape)
+    # print(x.shape)
+    # indices = torch.randperm(x.size(1))
+    
+    # # x.transpose(2, 1)  # (B, 3, N)
+    # x = x[:, indices]
+    # y = y[:, indices]
+    # # print(x.shape)
+    # # x.transpose_(2, 1)  # (B, 3, N)
+    return x, y
 
 if __name__ == '__main__':
 
@@ -49,19 +60,21 @@ if __name__ == '__main__':
     blue = lambda x: '\033[94m' + x + '\033[0m'
 
     classifier = PointNetSeg(k=num_classes)
-
+    # classifirer = classifier.cuda()
 
     optimizer = optim.Adam(classifier.parameters(), lr=0.001, betas=(0.9, 0.999))
     scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=20, gamma=0.5)
 
     num_batch = len(dataset) / opt.batchSize
     count =0
+    
     for epoch in range(opt.nepoch):
-        
         for i, data in enumerate(dataloader, 0):
             points, target = data
+            # points, target = points.to('cuda'), target.to('cuda')
             optimizer.zero_grad()
             classifier = classifier.train()
+            # print("calc goes here:", points.shape)
             pred = classifier(points)
             pred = pred.view(-1, num_classes)
             target = target.view(-1, 1)[:, 0] - 1
@@ -70,15 +83,19 @@ if __name__ == '__main__':
             loss.backward()
             optimizer.step()
             pred_choice = pred.data.max(1)[1]
-            correct = pred_choice.eq(target.data).cpu().float().mean()
-            print('[%d: %d/%d] train loss: %f accuracy: %f' % (epoch, i, num_batch, loss.item(), correct.item()))
+            correct = pred_choice.eq(target.data).cuda().float().mean()
+            # correct = pred_choice.eq(target.data).cpu().float().mean()
+            # print('[%d: %d/%d] train loss: %f accuracy: %f' % (epoch, i, num_batch, loss.item(), correct.item()))
             writer.add_train_scalar("Loss", loss.item(), count )
             writer.add_train_scalar("Acc", correct.item(), count)
 
             if i % 10 == 0:
                 j, data = next(enumerate(testdataloader, 0))
                 points, target = data
+                points, target = randomize_position(points, target)
+                
                 classifier = classifier.eval()
+                # points = points.cuda()
                 pred = classifier(points)
                 pred = pred.view(-1, num_classes)
                 target = target.view(-1, 1)[:, 0] - 1
@@ -96,6 +113,8 @@ if __name__ == '__main__':
     shape_ious = []
     for i,data in tqdm(enumerate(testdataloader, 0)):
         points, target = data
+        points, target = randomize_position(points, target)
+        
         classifier = classifier.eval()
         pred = classifier(points)
         pred_choice = pred.data.max(2)[1]
