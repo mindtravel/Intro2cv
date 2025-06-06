@@ -16,8 +16,8 @@ num_classes = 4
 # get the model using the helper function
 model = utils.get_instance_segmentation_model(num_classes).double()
 
-model.load_state_dict(torch.load(r'/media/2T/home/zxl/code/Intro2cv/assignment4/icv_hw4/intro2cv_maskrcnn_pretrained.pth', map_location='cpu'))
-# model.load_state_dict(torch.load(r'/media/2T/home/zxl/code/Intro2cv/assignment4/MaskRCNN/results/maskrcnn_2.pth', map_location='cpu'))
+# model.load_state_dict(torch.load(r'/media/2T/home/zxl/code/Intro2cv/assignment4/icv_hw4/intro2cv_maskrcnn_pretrained.pth', map_location='cpu'))
+model.load_state_dict(torch.load(r'/media/2T/home/zxl/code/Intro2cv/assignment4/MaskRCNN/results/maskrcnn_1.pth', map_location='cpu'))
 
 model.eval()
 
