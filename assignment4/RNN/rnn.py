@@ -187,7 +187,32 @@ class CaptioningRNN:
         # you are using an LSTM, initialize the first cell state to zeros.        #
         ###########################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
+        N = features.shape[0]
+        captions = self._null * np.ones((N, max_length), dtype=np.int32)
         
+        W_proj, b_proj = self.params["W_proj"], self.params["b_proj"]
+        W_embed = self.params["W_embed"]
+        Wx, Wh, b = self.params["Wx"], self.params["Wh"], self.params["b"]
+        W_vocab, b_vocab = self.params["W_vocab"], self.params["b_vocab"]
+        
+        # 初始化隐藏状态
+        h = np.dot(features, W_proj) + b_proj  # (N, H)
+        
+        # 初始输入为 <START> 标记
+        current_word = np.full(N, self._start)  # (N,)
+        
+        # 逐时间步生成单词
+        for t in range(max_length):
+            x = W_embed[current_word]  # (N, W)
+            
+            h = np.tanh(np.dot(h, Wh) + np.dot(x, Wx) + b)  # (N, H)
+            
+            scores = np.dot(h, W_vocab) + b_vocab  # (N, V)
+            
+            next_word = np.argmax(scores, axis=1)  # (N,)
+            
+            captions[:, t] = next_word
+            current_word = next_word   
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
         ############################################################################
         #                             END OF YOUR CODE                             #

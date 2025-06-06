@@ -7,12 +7,16 @@ import torch.utils.data
 import os
 import time
 
+# device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+# print('Using device:', device)
+
 os.makedirs("results", exist_ok=True)
 writer = utils.log_writer("results", "maskrcnn")
 num_classes = 4 # 0 for backgroud 
  
 model = utils.get_instance_segmentation_model(num_classes).double()
 
+# model.load_state_dict(torch.load(r'/media/2T/home/zxl/code/Intro2cv/assignment4/icv_hw4/intro2cv_maskrcnn_pretrained.pth',map_location=device))
 model.load_state_dict(torch.load(r'/media/2T/home/zxl/code/Intro2cv/assignment4/icv_hw4/intro2cv_maskrcnn_pretrained.pth',map_location='cpu'))
 
 dataset = MultiShapeDataset(10)
@@ -32,6 +36,7 @@ lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer,
                                                gamma=0.1)
 
 num_epochs = 3
+# device = torch.device(device)
 device = torch.device('cpu')
 
 count = 0

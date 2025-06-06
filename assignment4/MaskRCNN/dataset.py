@@ -98,10 +98,28 @@ def compute_iou(box, boxes, box_area, boxes_area):
     ## ----------------------------- TODO ----------------------- ##
     ## Compute the IoU between the specified box and other boxes  ##
     ## ---------------------------------------------------------- ##
+    x1 = np.maximum(box[0], boxes[:, 0])
+    y1 = np.maximum(box[1], boxes[:, 1])
+    x2 = np.minimum(box[2], boxes[:, 2])
+    y2 = np.minimum(box[3], boxes[:, 3])
+    
+    area_i = (x2 - x1) * (y2 - y1)
+    area_i[(x1 >= x2).any() or (y1 >= y2).any()] = 0
+    # for other box in boxes:
+    #     x1 = max(box[0], other_box[0])
+    #     y1 = max(box[1], other_box[1])
+    #     x2 = min(box[2], other_box[2])
+    #     y2 = min(box[3], other_box[3])
+
+    #     if x1 >= x2 or y1 >= y2:
+    #         continue
+    #     area_i
+    # area_i = None
+    iou = area_i / (box_area + boxes_area - area_i)
     return iou
 
 
-def nom_max_suppression(boxes, threshold):
+def non_max_suppression(boxes, threshold):
     
     x1 = boxes[:,0]
     y1 = boxes[:,1]
@@ -110,10 +128,16 @@ def nom_max_suppression(boxes, threshold):
 
     area = (y2 - y1) * (x2 - x1)
     ixs = np.arange(boxes.shape[0]-1, -1, -1)
+
+    # print("boxes:", boxes.shape,
+    #       "ixs", ixs)
+
     pick = []
     # Iterate while some indexes still remain in the indexes list
     # For the current index, calculate the IoU with all other indexes,
     # and remove indexes with IoU greater than the threshold
+    
+    # print("area:", area.shape)
     while len(ixs) > 0:
         i = ixs[0]
         if area[i] == 0:
@@ -122,7 +146,7 @@ def nom_max_suppression(boxes, threshold):
         iou = compute_iou(boxes[i,:], boxes[ixs[1:],:], area[i], area[ixs[1:]])
         ## ----------------------------- TODO ----------------------- ##
         ## Remove the indexes with IoU greater than the threshold     ##
-        ixs = 
+        ixs = ixs[1:][iou <= threshold]
         ## ---------------------------------------------------------- ##
     
     return np.array(pick, dtype=np.int32)
@@ -159,13 +183,11 @@ class MultiShapeDataset(torch.utils.data.Dataset):
 
 
     def _draw_one_shape_on_img(self, img, param):
-
         color = tuple([random.randint(0, 255) for _ in range(3)])
         y = param[0]
         x = param[1]
         s = param[2]
         shape_id = param[3]
-
         if shape_id == 1:
             # print(str(x-s), str(y-s),str(x+s), str(y+s))
             cv2.rectangle(img, (x-s, y-s), (x+s, y+s), color, -1)
@@ -180,31 +202,24 @@ class MultiShapeDataset(torch.utils.data.Dataset):
                             ]], dtype=np.int32)
             cv2.fillPoly(img, points, color)
 
-
     def __getitem__(self, idx):
         np.random.seed(idx)
         random.seed(idx)
         num_objs = random.randint(2,4) # number of shapes in single image
 
         masks = np.zeros((num_objs, self.h, self.w))
-        img = np.zeros((self.h, self.w, 3))
 
-        ## ------------------ TODO ------------------- ##
         ## randomize the background color of the image ##
-        img = 
-
-        ## ------------------------------------------- ##
+        img = np.ones((self.h, self.w, 3)) * np.asarray([random.randint(0, 255) for _ in range(3)])[None, None, :]
         
-
-        ## ------------------------ TODO --------------------- ##
         ## randomize the type, position and size of the shapes ##
-        obj_param = np.zeros((num_objs, 4)) 
-        obj_ids = np.zeros((num_objs)) 
+        obj_ids = np.random.randint(1, 4, (num_objs))
+        obj_params = np.zeros((num_objs, 4)) 
 
-
-
-        ## --------------------------------------------------- ##
-        
+        for i in range(num_objs):
+            obj_params[i] = self._draw_one_shape_on_mask(masks[i], obj_ids[i])
+            for j in range(i):
+                masks[j] = masks[j] * (1 - masks[i])
 
         boxes = np.zeros((num_objs,4))
         for i in range(num_objs):
@@ -213,30 +228,23 @@ class MultiShapeDataset(torch.utils.data.Dataset):
             xmax = np.max(pos[1])
             ymin = np.min(pos[0])
             ymax = np.max(pos[0])
-            boxes[i,:] = np.asarray([xmin, ymin, xmax, ymax])
+            boxes[i,:] = np.asarray([xmin, ymin, xmax, ymax]) # 根据图形生成Box
 
         
         # We do not want large occlusions between shapes. 
         # So we use non-max suppression (NMS) to remove the shapes with large overlap.
-        indx = nom_max_suppression(boxes, 0.2)
+        indx = non_max_suppression(boxes, 0.2)
 
         masks = masks[indx,...]
         obj_ids = obj_ids[indx]
         boxes = boxes[indx,...]
-        obj_param = obj_param[indx,...].astype(int)
+        obj_params = obj_params[indx,...].astype(int)
+        print(obj_params)
 
-
-        ## ------------------------ TODO --------------------- ##
         ## update the masks to handle occlusions               ##
 
-
-
-
-        ## --------------------------------------------------- ##
-
-
-        for i in range(obj_param.shape[0]-1, -1, -1):
-            self._draw_one_shape_on_img(img, obj_param[i,:])
+        for i in range(obj_params.shape[0]-1, -1, -1):
+            self._draw_one_shape_on_img(img, obj_params[i,:])
 
 
         boxes = torch.as_tensor(boxes, dtype=torch.float32)
